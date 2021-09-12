@@ -138,10 +138,15 @@ impl SudokuSolver {
             if grid.cells[i] == 0 { ne = i; }
         }
         let index_stack = Vec::with_capacity(size);
+        // next_index shall start at first non-empty.
+        let mut next_index = Some(0);
+        if grid.cells[0] != 0 {
+            next_index = Some(index_of_next_empty[0]);
+        }
 
         SudokuSolver {
             grid,
-            next_index: Some(index_of_next_empty[0]),
+            next_index,
             index_stack,
             index_of_next_empty,
             possibles: vec![None; size],
@@ -163,24 +168,30 @@ impl Iterator for SudokuSolver {
                     self.next_index = self.index_stack.pop();
                     return Some(self.grid.clone());
                 }
-                let g = &mut self.grid;
-                let possibles_at_x =
-                    self.possibles[x].get_or_insert_with({ ||
-                        g.possibilities_reverse(x) });
-                match possibles_at_x.pop() {
-                    None => {
-                        self.grid.cells[x] = 0;
-                        self.possibles[x] = None; // need to be recalc if again
-                        self.next_index = self.index_stack.pop();
-                        return self.next();
-                    }
-                    Some(p) => {
-                        self.grid.cells[x] = p;
-                        self.index_stack.push(x);
-                        self.next_index = Some(self.index_of_next_empty[x]);
-                        return self.next();
+                let mut x = x;
+                while x < self.grid.size {
+                    let g = &mut self.grid;
+                    let possibles_at_x =
+                        self.possibles[x].get_or_insert_with({ ||
+                            g.possibilities_reverse(x) });
+                    match possibles_at_x.pop() {
+                        None => {
+                            self.grid.cells[x] = 0;
+                            self.possibles[x] = None; // might need to recalc
+                            match self.index_stack.pop() {
+                                None => { return None; }
+                                Some(ni) => { x = ni; }
+                            }
+                        }
+                        Some(p) => {
+                            self.grid.cells[x] = p;
+                            self.index_stack.push(x);
+                            x = self.index_of_next_empty[x];
+                        }
                     }
                 }
+                self.next_index = Some(x);
+                return self.next();
             }
         }
     }
@@ -516,5 +527,44 @@ mod solving_tests {
         assert!(second_solution.is_none());
         assert!(first_solution.is_some());
         assert_eq!(grid.cells, first_solution.unwrap().cells);
+    }
+
+    #[test]
+    fn given_particular_4x4_grid_should_return_three_solutions() {
+        let input = "
+        12..
+        43..
+        ....
+        ...1
+        "
+        .to_string();
+        let grid = parse(&input).unwrap();
+
+        let solutions_vec: Vec<SudokuGrid> = solutions(&grid).unwrap().collect();
+        assert_eq!(3, solutions_vec.len());
+    }
+
+    #[test]
+    fn given_particular_4x4_grid_should_return_just_one_correct_solution() {
+        let input = "
+        .234
+        43..
+        ....
+        ...1
+        "
+        .to_string();
+        let answer_key_input = "
+        1234
+        4312
+        2143
+        3421
+        ".to_string();
+        let grid = parse(&input).unwrap();
+        let answer_key = parse(&answer_key_input).unwrap();
+        let mut solutions_vec: Vec<SudokuGrid> =
+            solutions(&grid).unwrap().collect();
+        assert_eq!(1, solutions_vec.len());
+        let the_solution = solutions_vec.pop().unwrap();
+        assert_eq!(answer_key.cells, the_solution.cells);
     }
 }
