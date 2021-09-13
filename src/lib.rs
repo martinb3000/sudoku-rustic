@@ -1,5 +1,5 @@
 // Terminology: https://en.wikipedia.org/wiki/Glossary_of_Sudoku
-// Inspiration: https://github.com/winson-cell/sudoku_solver_python/blob/master/Main.py
+// Inspiration: https://youtu.be/G_UYXzGuqvM
 
 /// A sudoku grid.
 #[derive(Clone)]
@@ -9,7 +9,7 @@ pub struct SudokuGrid {
     /// by row.
     cells: Vec<usize>, // has len() = size, empty cells have value zero.
     size: usize,     // =elements²; normally 81.
-    elements: usize, // =√size; normally 9; possible values ranges from 1 to this.
+    elements: usize, // =√size; values ranges from 1 to this, normally 9.
     boxsize: usize,  // =√elements; normally 3.
 }
 
@@ -224,7 +224,7 @@ pub fn format(grid: SudokuGrid) -> String {
     let row_of_boxes_count = grid.boxsize * grid.elements;
     for i in 0..grid.size {
         if i > 0 && i % row_of_boxes_count == 0 {
-            result.push_str("\n"); // empty line after row of boxes
+            result.push_str("\n"); // empty line before next row of boxes
         }
         let value = *(&grid.cells[i]);
         result.push_str(&format_element(value));
