@@ -39,7 +39,9 @@ impl SudokuGrid {
     /// `cell_values` represents the cells of the grid starting with
     /// top-left cell followed by rest of first row, then continues row
     /// by row.
+    ///
     /// A value of 0 means empty.
+    /// Any other number is an element in that cell.
     pub fn load(cell_values: &Vec<usize>) -> Result<SudokuGrid, String> {
         let elements = (cell_values.len() as f64).sqrt() as usize;
         let boxsize = (elements as f64).sqrt() as usize;
@@ -66,14 +68,7 @@ impl SudokuGrid {
 
     /// Get possible values for a cell based on its neighbors
     /// but not itself, in ascending order.
-    /// `self` is mut for dumb reasons.
-    fn possibilities(&mut self, index: usize) -> Vec<usize> {
-        // Temporarily set cell to 0 to not let it influence result.
-        // This is the dumb reason mentioned in docstring.
-        // Will be restored at end of fn.
-        let value = self.cells[index];
-        self.cells[index] = 0;
-
+    fn possibilities(&self, index: usize) -> Vec<usize> {
         // `pmap` will contain `true` at `map[i]` if `i` is possible.
         let mut pmap = vec![true; self.elements + 1];
         pmap[0] = false;
@@ -89,21 +84,19 @@ impl SudokuGrid {
                             + boxcol * self.boxsize; // column
         for i in 0..self.elements {
             // row
-            pmap[self.cells[i + rowstart_index]] = false;
+            pmap[self.read_value_at_index(i + rowstart_index, index)] = false;
             // column
-            pmap[self.cells[(i * self.elements) + colstart_index]] = false;
+            pmap[self.read_value_at_index(
+                (i * self.elements) + colstart_index, index)] = false;
             // box
-            pmap[self.cells[
+            pmap[self.read_value_at_index(
                 // This calculation is dense?
                 // Could make two for loops of 0..self.boxsize instead
                 boxbase_index
                  + (i % self.boxsize) // loop columns
                  + (i / self.boxsize) * self.elements // loop rows
-                ]] = false;
+                , index)] = false;
         }
-
-        // Restore value temporarily set to 0 at start.
-        self.cells[index] = value;
 
         // Construct result.
         let mut result = Vec::with_capacity(self.elements);
@@ -114,6 +107,13 @@ impl SudokuGrid {
         }
 
         result
+    }
+    
+    /// Helper for `possibilities`. Return value in cell at `index`,
+    /// except if it is `except_index` in which case it returns `0`.
+    fn read_value_at_index(&self, index: usize, except_index: usize) -> usize {
+        if index == except_index { return 0; }
+        return self.cells[index];
     }
 }
 
@@ -198,7 +198,7 @@ impl Iterator for SudokuSolver {
 }
 
 pub fn solutions(grid: &SudokuGrid) -> Result<SudokuSolver, String> {
-    let mut grid = grid.clone();
+    let grid = grid.clone();
     // Check grid self-validity.
     for i in 0..grid.size {
         let x = grid.cells[i];
@@ -400,7 +400,7 @@ mod solving_tests {
                          3, 0, 0, 1, //
                          2, 0, 0, 4, //
                          4, 0, 0, 0];
-        let mut grid = SudokuGrid::load(&input).unwrap();
+        let grid = SudokuGrid::load(&input).unwrap();
         assert_eq!(grid.possibilities(0), vec![1], "index 0");
         assert_eq!(grid.possibilities(1), vec![2, 4], "index 1");
         assert_eq!(grid.possibilities(2), vec![3, 4], "index 2");
@@ -438,7 +438,7 @@ mod solving_tests {
             ..4 .8. 3..
         "
         .to_string();
-        let mut grid = parse(&input).unwrap();
+        let grid = parse(&input).unwrap();
         assert_eq!(
             grid.possibilities(4),
             vec![1],
