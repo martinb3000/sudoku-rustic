@@ -140,7 +140,7 @@ impl SudokuSolver {
         let index_stack = Vec::with_capacity(size);
         // next_index shall start at first non-empty.
         let mut next_index = Some(0);
-        if grid.cells[0] != 0 {
+        if grid.cells.len() > 0 && grid.cells[0] != 0 {
             next_index = Some(index_of_next_empty[0]);
         }
 
@@ -217,6 +217,7 @@ pub fn solutions(grid: &SudokuGrid) -> Result<SudokuSolver, String> {
 }
 
 pub fn format(grid: SudokuGrid) -> String {
+    if grid.size == 0 { return "".to_string(); }
     let mut result = String::new();
     let minus_one_mod_row_size = grid.elements - 1;
     let minus_one_mod_boxsize = grid.boxsize - 1;
@@ -289,7 +290,7 @@ fn parse_element(c: char) -> Option<usize> {
 }
 
 #[cfg(test)]
-mod parse_and_format_tests {
+mod parse_format {
     use super::*;
 
     #[test]
@@ -388,10 +389,24 @@ mod parse_and_format_tests {
     fn given_small_z_parse_element_should_return_61() {
         assert_eq!(parse_element('z'), Some(61));
     }
+
+    #[test]
+    fn given_0x0_grid_format_shall_return_empty_string() {
+        let grid = SudokuGrid::load(&Vec::new()).unwrap();
+        let result = format(grid);
+        assert_eq!("", result);
+    }
+
+    #[test]
+    fn given_1x1_grid_format_shall_return_1_as_string() {
+        let grid = SudokuGrid::load(&vec![1]).unwrap();
+        let result = format(grid);
+        assert_eq!("1\n", result);
+    }
 }
 
 #[cfg(test)]
-mod solving_tests {
+mod solving {
     use super::*;
 
     #[test]
@@ -566,5 +581,25 @@ mod solving_tests {
         assert_eq!(1, solutions_vec.len());
         let the_solution = solutions_vec.pop().unwrap();
         assert_eq!(answer_key.cells, the_solution.cells);
+    }
+
+    #[test]
+    fn given_0x0_grid_solve_shall_return_0x0_grid() {
+        let grid = SudokuGrid::load(&Vec::new()).unwrap();
+        let mut solutions_vec: Vec<SudokuGrid> =
+            solutions(&grid).unwrap().collect();
+        assert_eq!(1, solutions_vec.len());
+        let the_solution = solutions_vec.pop().unwrap();
+        assert!(the_solution.cells.is_empty());
+    }
+
+    #[test]
+    fn given_1x1_grid_solve_shall_return_1x1_grid_with_1_in_cell() {
+        let grid = SudokuGrid::load(&vec![0]).unwrap();
+        let mut solutions_vec: Vec<SudokuGrid> =
+            solutions(&grid).unwrap().collect();
+        assert_eq!(1, solutions_vec.len());
+        let the_solution = solutions_vec.pop().unwrap();
+        assert_eq!(vec![1], the_solution.cells);
     }
 }
