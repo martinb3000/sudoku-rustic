@@ -166,7 +166,7 @@ impl Iterator for SudokuSolver {
     fn next(&mut self) -> Option<Self::Item> {
         match self.next_index {
             None => {
-                // Only zero-size grids actually end up here.
+                // Only already solved grids actually end up here.
                 return None;
             }
             Some(x) => {
