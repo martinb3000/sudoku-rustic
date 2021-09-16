@@ -132,18 +132,23 @@ impl SudokuSolver {
     pub fn new(grid: SudokuGrid) -> SudokuSolver {
         let size = grid.size;
         let mut index_of_next_empty = vec![0; size];
-        let mut ne = size;
+        let mut ne = size; // Next empty cell index.
         for i in (0..size).rev() {
+            // Point to the next empty cell from here.
             index_of_next_empty[i] = ne;
             if grid.cells[i] == 0 { ne = i; }
         }
         let index_stack = Vec::with_capacity(size);
+
         // next_index shall start at first non-empty.
-        let mut next_index = Some(0); // Maybe first cell is empty.
-        if grid.cells.len() > 0 && grid.cells[0] != 0 {
-            // But if it isn't we know the next empty one already
-            // thanks to the for loop above.
-            next_index = Some(index_of_next_empty[0]);
+        let mut next_index = None;
+        if grid.cells.len() > 0 {
+            match grid.cells[0] {
+                // If the first cell is empty point to it.
+                0 => { next_index = Some(0); }
+                // But if it isn't we know the next empty one.
+                _ => { next_index = Some(index_of_next_empty[0]); }
+            }
         }
 
         SudokuSolver {
@@ -161,11 +166,12 @@ impl Iterator for SudokuSolver {
     fn next(&mut self) -> Option<Self::Item> {
         match self.next_index {
             None => {
-                // Don't think this actually ever happens.
+                // Only zero-size grids actually end up here.
                 return None;
             }
             Some(x) => {
                 // For rest of function x works like a index into the cells.
+
                 // If x is past the end of the cells all the cells have
                 // been filled, i.e. we have a solution.
                 if x >= self.grid.size {
@@ -607,13 +613,11 @@ mod solving {
     }
 
     #[test]
-    fn given_0x0_grid_solve_shall_return_0x0_grid() {
+    fn given_0x0_grid_solve_shall_return_no_solutions() {
         let grid = SudokuGrid::load(&Vec::new()).unwrap();
-        let mut solutions_vec: Vec<SudokuGrid> =
+        let solutions_vec: Vec<SudokuGrid> =
             solutions(&grid).unwrap().collect();
-        assert_eq!(1, solutions_vec.len());
-        let the_solution = solutions_vec.pop().unwrap();
-        assert!(the_solution.cells.is_empty());
+        assert_eq!(0, solutions_vec.len());
     }
 
     #[test]
