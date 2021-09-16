@@ -195,9 +195,9 @@ impl Iterator for SudokuSolver {
                         Some(p) => {
                             // Try setting cell to value...
                             self.grid.cells[x] = p;
-                            // Remembering to come back here in when done..
+                            // ...remembering to come back here when done...
                             self.index_stack.push(x);
-                            // But right now, check if we get anywhere
+                            // ..but right now, check if we get anywhere
                             // with the next empty cell.
                             x = self.index_of_next_empty[x];
                         }
