@@ -245,7 +245,7 @@ pub fn solutions(grid: &SudokuGrid) -> Result<SudokuSolver, String> {
 
 pub fn format(grid: SudokuGrid) -> String {
     if grid.size == 0 { return "".to_string(); }
-    let mut result = String::new();
+    let mut result = String::with_capacity(16*16*3);
     let minus_one_mod_row_size = grid.elements - 1;
     let minus_one_mod_boxsize = grid.boxsize - 1;
     let row_of_boxes_count = grid.boxsize * grid.elements;
