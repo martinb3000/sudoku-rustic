@@ -60,7 +60,7 @@ impl SudokuGrid {
 
     /// Like `possibilities` except the returned vec is suitable
     /// for popping off smallest values first.
-    fn possibilities_reverse(&mut self, index: usize) -> Vec<usize> {
+    fn possibilities_reverse(&self, index: usize) -> Vec<usize> {
         let mut p = self.possibilities(index);
         p.reverse();
         p
@@ -139,8 +139,10 @@ impl SudokuSolver {
         }
         let index_stack = Vec::with_capacity(size);
         // next_index shall start at first non-empty.
-        let mut next_index = Some(0);
+        let mut next_index = Some(0); // Maybe first cell is empty.
         if grid.cells.len() > 0 && grid.cells[0] != 0 {
+            // But if it isn't we know the next empty one already
+            // thanks to the for loop above.
             next_index = Some(index_of_next_empty[0]);
         }
 
@@ -159,38 +161,57 @@ impl Iterator for SudokuSolver {
     fn next(&mut self) -> Option<Self::Item> {
         match self.next_index {
             None => {
+                // Don't think this actually ever happens.
                 return None;
             }
             Some(x) => {
+                // For rest of function x works like a index into the cells.
+                // If x is past the end of the cells all the cells have
+                // been filled, i.e. we have a solution.
                 if x >= self.grid.size {
-                    // We have a solution, return it and continue
+                    // We have a solution, return it and continue to
                     // other possibilities.
                     self.next_index = self.index_stack.pop();
                     return Some(self.grid.clone());
                 }
                 let mut x = x;
                 while x < self.grid.size {
-                    let g = &mut self.grid;
+                    // This cell is empty in the original grid.
+
+                    // If we have not visited this cell before
+                    // we now need to get possiblie values at x.
+                    let g = &self.grid;
                     let possibles_at_x =
                         self.possibles[x].get_or_insert_with({ ||
                             g.possibilities_reverse(x) });
+
                     match possibles_at_x.pop() {
+                        Some(p) => {
+                            // Try setting cell to value...
+                            self.grid.cells[x] = p;
+                            // Remembering to come back here in when done..
+                            self.index_stack.push(x);
+                            // But right now, check if we get anywhere
+                            // with the next empty cell.
+                            x = self.index_of_next_empty[x];
+                        }
                         None => {
+                            // We are done visiting this cell; clean up.
                             self.grid.cells[x] = 0;
-                            self.possibles[x] = None; // might need to recalc
+                            self.possibles[x] = None;
+                            // Back-track to a previous cell if any.
                             match self.index_stack.pop() {
                                 None => { return None; }
                                 Some(ni) => { x = ni; }
                             }
                         }
-                        Some(p) => {
-                            self.grid.cells[x] = p;
-                            self.index_stack.push(x);
-                            x = self.index_of_next_empty[x];
-                        }
                     }
                 }
-                self.next_index = Some(x);
+                // Will only come here if x >= self.grid.size, which
+                // means we could return grid as solution here, but
+                // instead call self recursively once to keep the
+                // success code in one place.
+                self.next_index = Some(x); // Remember x when we recurse.
                 return self.next();
             }
         }
@@ -199,14 +220,14 @@ impl Iterator for SudokuSolver {
 
 pub fn solutions(grid: &SudokuGrid) -> Result<SudokuSolver, String> {
     let grid = grid.clone();
-    // Check grid self-validity.
+    // Check grid for self-contradictions.
     for i in 0..grid.size {
         let x = grid.cells[i];
         if x == 0 {
             continue;
         }
         if x > grid.elements {
-            return Err(format!("Invalid element {}", format_element(x)));
+            return Err(format!("Invalid element {}", x));
         }
         let possibles = grid.possibilities(i);
         if !possibles.contains(&x) {
@@ -224,10 +245,12 @@ pub fn format(grid: SudokuGrid) -> String {
     let row_of_boxes_count = grid.boxsize * grid.elements;
     for i in 0..grid.size {
         if i > 0 && i % row_of_boxes_count == 0 {
-            result.push_str("\n"); // empty line before next row of boxes
+             // Empty line before next row of boxes unless first row.
+             result.push_str("\n");
         }
-        let value = *(&grid.cells[i]);
-        result.push_str(&format_element(value));
+        let value = &grid.cells[i];
+        result.push_str(&format_element(*value));
+        // After the formatted cell value we add one of:
         if i % grid.elements == minus_one_mod_row_size {
             result.push_str("\n"); // after last cell on line
         } else if i % grid.boxsize == minus_one_mod_boxsize {
@@ -539,8 +562,8 @@ mod solving {
         let mut solution_iterator = solutions(&grid).unwrap();
         let first_solution = solution_iterator.next();
         let second_solution = solution_iterator.next();
-        assert!(second_solution.is_none());
-        assert!(first_solution.is_some());
+        assert!(second_solution.is_none(), "no second solution!");
+        assert!(first_solution.is_some(), "has a solution");
         assert_eq!(grid.cells, first_solution.unwrap().cells);
     }
 
