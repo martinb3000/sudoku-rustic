@@ -3,5 +3,5 @@
 version = 3
 
 [[package]]
-name = "sudokur"
+name = "sudoku_rustic"
 version = "0.1.0"

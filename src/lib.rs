@@ -1,3 +1,6 @@
+// © Copyright 2021 Sudoku Rustic’s Authors
+// Subject to the MIT License. See file LICENSE for details.
+
 // Terminology: https://en.wikipedia.org/wiki/Glossary_of_Sudoku
 // Inspiration: https://youtu.be/G_UYXzGuqvM
 
@@ -170,12 +173,12 @@ impl Iterator for SudokuSolver {
                 return None;
             }
             Some(x) => {
-                // For rest of function x works like a index into the cells.
+                // For rest of function x works like an index into the cells.
 
                 // If x is past the end of the cells all the cells have
-                // been filled, i.e. we have a solution.
+                // been filled, so we have a solution.
                 if x >= self.grid.size {
-                    // We have a solution, return it and continue to
+                    // Return the solution and continue to
                     // other possibilities.
                     self.next_index = self.index_stack.pop();
                     return Some(self.grid.clone());
