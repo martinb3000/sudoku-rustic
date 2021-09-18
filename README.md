@@ -1,6 +1,6 @@
-Some code for solving a Sudoku puzzle.
+Some code for solving a Sudoku puzzle, not using recursion (except once).
 
-I wrote this as an exercize when learning Rust.
+I wrote this as an exercise when learning Rust.
 
 Desired functionality:
 

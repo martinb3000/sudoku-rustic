@@ -188,7 +188,7 @@ impl Iterator for SudokuSolver {
                     // This cell is empty in the original grid.
 
                     // If we have not visited this cell before
-                    // we now need to get possiblie values at x.
+                    // we now need to get possible values at x.
                     let g = &self.grid;
                     let possibles_at_x =
                         self.possibles[x].get_or_insert_with({ ||
@@ -227,6 +227,7 @@ impl Iterator for SudokuSolver {
     }
 }
 
+/// Returns an iterator which will provide the solutions.
 pub fn solutions(grid: &SudokuGrid) -> Result<SudokuSolver, String> {
     let grid = grid.clone();
     // Check grid for self-contradictions.
@@ -246,6 +247,7 @@ pub fn solutions(grid: &SudokuGrid) -> Result<SudokuSolver, String> {
     Ok(SudokuSolver::new(grid))
 }
 
+/// Returns a string that is useful for output on the console.
 pub fn format(grid: SudokuGrid) -> String {
     if grid.size == 0 { return "".to_string(); }
     let mut result = String::with_capacity(16*16*3);
@@ -271,6 +273,17 @@ pub fn format(grid: SudokuGrid) -> String {
     result
 }
 
+/// Parses some input as a Sudoku puzzle grid.
+/// Characters '0' and '.' are interpeted as empty cells.
+/// '1' to '9', 'A' to 'Z', and 'a' to 'z' as different elements.
+/// Other characters are ignored.
+///
+/// The number of values must be a perfect square squared.
+/// The maximum value must not be greater than the square
+/// root of the number of values.
+///
+/// Typically you'd input 81 dots and numbers between 1 and 9,
+/// 9 on each row.
 pub fn parse(content: &String) -> Result<SudokuGrid, String> {
     // 256 is enough for a 16*16 grid.
     let mut cell_values = Vec::with_capacity(256);
