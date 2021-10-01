@@ -1,4 +1,4 @@
-Some code for solving a Sudoku puzzle, not using recursion (except once).
+Some code for solving a Sudoku puzzle, mostly not using recursion.
 
 I wrote this as an exercise when learning Rust.
 
@@ -11,4 +11,3 @@ Desired functionality:
   [Iterator trait](https://doc.rust-lang.org/std/iter/index.html).
 
 Also I wanted to experiment with putting some code up on GitHub.
-
