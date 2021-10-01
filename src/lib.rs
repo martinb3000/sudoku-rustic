@@ -1,9 +1,6 @@
 // © Copyright 2021 Sudoku Rustic’s Authors
 // Subject to the MIT License. See file LICENSE for details.
 
-// Terminology: https://en.wikipedia.org/wiki/Glossary_of_Sudoku
-// Inspiration: https://youtu.be/G_UYXzGuqvM
-
 /// A sudoku grid.
 #[derive(Clone)]
 pub struct SudokuGrid {
