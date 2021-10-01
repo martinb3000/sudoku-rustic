@@ -512,7 +512,7 @@ mod solving {
         assert_eq!(
             grid.possibilities(80),
             vec![1, 2, 5, 6, 9],
-            "index 26: last row, last column"
+            "index 80: last row, last column"
         );
     }
 
