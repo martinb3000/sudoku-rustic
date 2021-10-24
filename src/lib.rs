@@ -65,14 +65,6 @@ impl SudokuGrid {
         Ok(grid)
     }
 
-    /// Like `possibilities` except the returned vec is suitable
-    /// for popping off smallest values first.
-    fn possibilities_reverse(&self, index: SizeType) -> Vec<ElementType> {
-        let mut p = self.possibilities(index);
-        p.reverse();
-        p
-    }
-
     /// Get possible values for a cell based on its neighbors
     /// but not itself, in ascending order.
     fn possibilities(&self, index: SizeType) -> Vec<ElementType> {
@@ -196,7 +188,7 @@ impl Iterator for SudokuSolver {
                     let g = &self.grid;
                     let possibles_at_x =
                         self.possibles[x].get_or_insert_with({ ||
-                            g.possibilities_reverse(x) });
+                            g.possibilities(x) });
 
                     match possibles_at_x.pop() {
                         Some(p) => {
