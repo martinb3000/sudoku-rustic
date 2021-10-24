@@ -1,24 +1,28 @@
 // © Copyright 2021 Sudoku Rustic’s Authors
 // Subject to the MIT License. See file LICENSE for details.
 
+type ElementType = u8; // Capable of containg all elements plus empty, normally 0..=9.
+type SizeType = usize; // Capable of indexing all cells in a grid plus one, normally 82.
+
 /// A sudoku grid.
 #[derive(Clone)]
 pub struct SudokuGrid {
     /// The cells of the grid starting with top-left cell
     /// followed by rest of first row, then continues row
     /// by row.
-    cells: Vec<usize>, // has len() = size, empty cells have value zero.
-    size: usize,     // =elements²; normally 81.
-    elements: usize, // =√size; values ranges from 1 to this, normally 9.
-    boxsize: usize,  // =√elements; normally 3.
+    cells: Vec<ElementType>, // has len() = size, empty cells have value zero.
+    size: SizeType,     // =elements²; normally 81.
+    elements: SizeType, // =√size; values ranges from 1 to this, normally 9.
+    boxsize: SizeType,  // =√elements; normally 3.
 }
 
 impl SudokuGrid {
     /// Creates a new grid. `elements` must be a perfect
     /// square, normally 9, maximum 16 (currently).
-    pub fn new(elements: usize) -> SudokuGrid {
+    pub fn new(elements: ElementType) -> SudokuGrid {
         assert!(elements <= 16, "maximum number of elements is 16.");
-        let boxsize = (elements as f64).sqrt() as usize;
+        let boxsize = (elements as f64).sqrt() as SizeType;
+        let elements = SizeType::from(elements);
         assert_eq!(
             elements,
             boxsize.pow(2),
@@ -42,13 +46,16 @@ impl SudokuGrid {
     ///
     /// A value of 0 means empty.
     /// Any other number is an element in that cell.
-    pub fn load(cell_values: &Vec<usize>) -> Result<SudokuGrid, String> {
-        let elements = (cell_values.len() as f64).sqrt() as usize;
-        let boxsize = (elements as f64).sqrt() as usize;
+    /// Maximum lenght is 256*256 = 65536
+    pub fn load(cell_values: &Vec<ElementType>) -> Result<SudokuGrid, String> {
+        assert!(cell_values.len() <= 65536, "Won't attemt loading grids larger than 256x256.");
+        // Because `elements` here might lose data when later cast to ElementSize/u8.
+        let elements = (cell_values.len() as f64).sqrt() as SizeType;
+        let boxsize = (elements as f64).sqrt() as SizeType;
         if boxsize.pow(2).pow(2) != cell_values.len() {
             return Err(format!("Invalid input, length must be a perfect square of a perfect square. Normally 81. Was: {}", cell_values.len()));
         }
-        let mut grid = SudokuGrid::new(elements);
+        let mut grid = SudokuGrid::new(elements as ElementType);
         for (i, elem) in cell_values.iter().enumerate() {
             if *elem == 0 {
                 continue;
@@ -60,7 +67,7 @@ impl SudokuGrid {
 
     /// Like `possibilities` except the returned vec is suitable
     /// for popping off smallest values first.
-    fn possibilities_reverse(&self, index: usize) -> Vec<usize> {
+    fn possibilities_reverse(&self, index: SizeType) -> Vec<ElementType> {
         let mut p = self.possibilities(index);
         p.reverse();
         p
@@ -68,7 +75,7 @@ impl SudokuGrid {
 
     /// Get possible values for a cell based on its neighbors
     /// but not itself, in ascending order.
-    fn possibilities(&self, index: usize) -> Vec<usize> {
+    fn possibilities(&self, index: SizeType) -> Vec<ElementType> {
         // `pmap` will contain `true` at `map[i]` if `i` is possible.
         let mut pmap = vec![true; self.elements + 1];
         pmap[0] = false;
@@ -102,7 +109,7 @@ impl SudokuGrid {
         let mut result = Vec::with_capacity(self.elements);
         for i in 1..=self.elements {
             if pmap[i] {
-                result.push(i);
+                result.push(i as ElementType);
             }
         }
 
@@ -111,21 +118,21 @@ impl SudokuGrid {
     
     /// Helper for `possibilities`. Return value in cell at `index`,
     /// except if it is `except_index` in which case it returns `0`.
-    fn read_value_at_index(&self, index: usize, except_index: usize) -> usize {
+    fn read_value_at_index(&self, index: SizeType, except_index: SizeType) -> usize {
         if index == except_index { return 0; }
-        return self.cells[index];
+        return self.cells[index] as usize;
     }
 }
 
 pub struct SudokuSolver {
     grid: SudokuGrid,
 
-    next_index: Option<usize>,
-    index_stack: Vec<usize>,
+    next_index: Option<SizeType>,
+    index_stack: Vec<SizeType>,
 
     // some data at every index
-    index_of_next_empty: Vec<usize>,
-    possibles: Vec<Option<Vec<usize>>>,
+    index_of_next_empty: Vec<SizeType>,
+    possibles: Vec<Option<Vec<ElementType>>>,
 }
 
 impl SudokuSolver {
@@ -233,7 +240,7 @@ pub fn solutions(grid: &SudokuGrid) -> Result<SudokuSolver, String> {
         if x == 0 {
             continue;
         }
-        if x > grid.elements {
+        if x as SizeType > grid.elements {
             return Err(format!("Invalid element {}", x));
         }
         let possibles = grid.possibilities(i);
@@ -299,7 +306,7 @@ pub fn parse(content: &String) -> Result<SudokuGrid, String> {
 /// Convert element value to string representation. 0 becomes ".",
 /// 1 to 9 becomes "1" to "9", 10 to 35 becomes "A" to "Z",
 /// 36 to 61 becomes "a" to "z".
-fn format_element(n: usize) -> String {
+fn format_element(n: ElementType) -> String {
     let n = n as u32;
     match n {
         0 => ".".to_string(),
@@ -321,12 +328,12 @@ fn format_element(n: usize) -> String {
 /// Converts from char to element value. '.' becomes 0,
 /// '0' to '9' becomes 0 to 9, 'A' to 'Z' becomes 10 to 35,
 /// 36 to 61. Other chars become nothing.
-fn parse_element(c: char) -> Option<usize> {
+fn parse_element(c: char) -> Option<ElementType> {
     match c {
-        '0'..='9' => Some(c.to_digit(10).unwrap() as usize),
+        '0'..='9' => Some(c.to_digit(10).unwrap() as ElementType),
         '.' => Some(0),
-        'A'..='Z' => Some(c.to_digit(36).unwrap() as usize),
-        'a'..='z' => Some(26 + c.to_ascii_uppercase().to_digit(36).unwrap() as usize),
+        'A'..='Z' => Some(c.to_digit(36).unwrap() as ElementType),
+        'a'..='z' => Some(26 + c.to_ascii_uppercase().to_digit(36).unwrap() as ElementType),
         _ => None,
     }
 }
