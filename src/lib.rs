@@ -46,7 +46,7 @@ impl SudokuGrid {
     ///
     /// A value of 0 means empty.
     /// Any other number is an element in that cell.
-    /// Maximum lenght is 256*256 = 65536
+    /// Maximum length is 256*256 = 65536
     pub fn load(cell_values: &Vec<ElementType>) -> Result<SudokuGrid, String> {
         assert!(cell_values.len() <= 65536, "Won't attemt loading grids larger than 256x256.");
         // Because `elements` here might lose data when later cast to ElementSize/u8.
