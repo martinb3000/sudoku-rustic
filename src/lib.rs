@@ -11,8 +11,12 @@ pub struct SudokuGrid {
     /// followed by rest of first row, then continues row
     /// by row.
     cells: Vec<ElementType>, // has len() = size, empty cells have value zero.
+
     size: SizeType,     // =elements²; normally 81.
+
     elements: SizeType, // =√size; values ranges from 1 to this, normally 9.
+                        // Also number of cells in row/column/box.
+
     boxsize: SizeType,  // =√elements; normally 3.
 }
 
@@ -66,10 +70,11 @@ impl SudokuGrid {
     }
 
     /// Get possible values for a cell based on its neighbors
-    /// but not itself, in ascending order.
+    /// but not itself, in arbitrary order.
     fn possibilities(&self, index: SizeType) -> Vec<ElementType> {
         // `pmap` will contain `true` at `map[i]` if `i` is possible.
         let mut pmap = vec![true; self.elements + 1];
+        // `pmap[0]` will not be used when constructing result, but set it to false just in case.
         pmap[0] = false;
         let rowstart_index = (index / self.elements) * self.elements;
         let colstart_index = index % self.elements;
@@ -81,6 +86,16 @@ impl SudokuGrid {
         // Top left corner of box:
         let boxbase_index = boxrow * self.boxsize * self.elements // row
                             + boxcol * self.boxsize; // column
+
+        // Now set `pmap` to false at index corresponding to element if that element is part of the
+        // row, column or box already.
+        // We look at each cell in the row/column/box in turn to find such elements.
+        // We loop over `0..self.element` for this because that is how many cells there are in a
+        // row/column/box, not because we look at each element in turn.
+        // If the row/column/box contains a zero at index `i`, or looking at the `index` cell
+        // itself, it will set `pmap[0]` to false, but since that has no effect when the result
+        // is constructed this does not matter. Probably faster to just set `pmap[0]` than checking
+        // if a write to `pmap` should be skipped.
         for i in 0..self.elements {
             // row
             pmap[self.read_value_at_index(i + rowstart_index, index)] = false;
@@ -119,11 +134,18 @@ impl SudokuGrid {
 pub struct SudokuSolver {
     grid: SudokuGrid,
 
+    // Index at which possibilities should be considered. If value is `>= self.grid.size` then the grid is full.
     next_index: Option<SizeType>,
+
+    // Indexes that should be returned to when all possiblities has been exhausted at the current index.
     index_stack: Vec<SizeType>,
 
-    // some data at every index
+    // Next follows some data at every index ("this cell").
+
+    // Points to index of next empty cell after this cell.
     index_of_next_empty: Vec<SizeType>,
+
+    // Possible elements to try out in this cell.
     possibles: Vec<Option<Vec<ElementType>>>,
 }
 
@@ -165,7 +187,7 @@ impl Iterator for SudokuSolver {
     fn next(&mut self) -> Option<Self::Item> {
         match self.next_index {
             None => {
-                // Only already solved grids actually end up here.
+                // Only 0x0 grids end up here.
                 return None;
             }
             Some(x) => {
