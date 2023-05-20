@@ -126,7 +126,7 @@ impl SudokuGrid {
     /// except if it is `except_index` in which case it returns `0`.
     fn read_value_at_index(&self, index: SizeType, except_index: SizeType) -> usize {
         if index == except_index { return 0; }
-        return self.cells[index] as usize;
+        self.cells[index] as usize
     }
 }
 
@@ -162,7 +162,7 @@ impl SudokuSolver {
 
         // next_index shall start at first non-empty.
         let mut next_index = None;
-        if grid.cells.len() > 0 {
+        if !grid.cells.is_empty() {
             match grid.cells[0] {
                 // If the first cell is empty point to it.
                 0 => { next_index = Some(0); }
@@ -187,7 +187,7 @@ impl Iterator for SudokuSolver {
         match self.next_index {
             None => {
                 // Only 0x0 grids end up here.
-                return None;
+                None
             }
             Some(x) => {
                 // For rest of function x works like an index into the cells.
@@ -238,7 +238,7 @@ impl Iterator for SudokuSolver {
                 // instead call self recursively once to keep the
                 // success code in one place.
                 self.next_index = Some(x); // Remember x when we recurse.
-                return self.next();
+                self.next()
             }
         }
     }
@@ -274,17 +274,17 @@ pub fn format(grid: SudokuGrid) -> String {
     for i in 0..grid.size {
         if i > 0 && i % row_of_boxes_count == 0 {
              // Empty line before next row of boxes unless first row.
-             result.push_str("\n");
+             result.push('\n');
         }
         let value = &grid.cells[i];
         result.push_str(&format_element(*value));
         // After the formatted cell value we add one of:
         if i % grid.elements == minus_one_mod_row_size {
-            result.push_str("\n"); // after last cell on line
+            result.push('\n'); // after last cell on line
         } else if i % grid.boxsize == minus_one_mod_boxsize {
             result.push_str("  "); // extra space after box
         } else {
-            result.push_str(" "); // to separate from cell after
+            result.push(' '); // to separate from cell after
         }
     }
     result
@@ -301,19 +301,16 @@ pub fn format(grid: SudokuGrid) -> String {
 ///
 /// Typically you'd input 81 dots and numbers between 1 and 9,
 /// 9 on each row.
-pub fn parse(content: &String) -> Result<SudokuGrid, String> {
+pub fn parse(content: &str) -> Result<SudokuGrid, String> {
     // 256 is enough for a 16*16 grid.
     let mut cell_values = Vec::with_capacity(256);
     for c in content.chars() {
         let value = parse_element(c);
-        match value {
-            Some(x) => {
-                cell_values.push(x);
-            }
-            _ => { /* formatting */ }
+        if let Some(x) = value {
+            cell_values.push(x);
         }
     }
-    return SudokuGrid::load(&cell_values);
+    SudokuGrid::load(&cell_values)
 }
 
 /// Convert element value to string representation. 0 becomes ".",
