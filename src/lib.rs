@@ -113,8 +113,8 @@ impl SudokuGrid {
 
         // Construct result.
         let mut result = Vec::with_capacity(self.elements);
-        for i in 1..=self.elements {
-            if pmap[i] {
+        for (i, is_possible) in pmap.iter().enumerate() {
+            if i > 0 && *is_possible {
                 result.push(i as ElementType);
             }
         }
