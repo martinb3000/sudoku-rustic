@@ -52,14 +52,13 @@ impl SudokuGrid {
     /// Any other number is an element in that cell.
     /// Maximum length is 256*256 = 65536
     pub fn load(cell_values: &Vec<ElementType>) -> Result<SudokuGrid, String> {
-        assert!(cell_values.len() <= 65536, "Won't attemt loading grids larger than 256x256.");
-        // Because `elements` here might lose data when later cast to ElementSize/u8.
-        let elements = (cell_values.len() as f64).sqrt() as SizeType;
-        let boxsize = (elements as f64).sqrt() as SizeType;
+        assert!(cell_values.len() <= 65536, "Won't attempt loading grids larger than 256x256.");
+        let elements_count = (cell_values.len() as f64).sqrt() as u32;
+        let boxsize = (elements_count as f64).sqrt() as SizeType;
         if boxsize.pow(2).pow(2) != cell_values.len() {
             return Err(format!("Invalid input, length must be a perfect square of a perfect square. Normally 81. Was: {}", cell_values.len()));
         }
-        let mut grid = SudokuGrid::new(elements as ElementType);
+        let mut grid = SudokuGrid::new(elements_count as ElementType);
         for (i, elem) in cell_values.iter().enumerate() {
             if *elem == 0 {
                 continue;
@@ -218,7 +217,7 @@ impl Iterator for SudokuSolver {
                             self.grid.cells[x] = p;
                             // ...remembering to come back here when done...
                             self.index_stack.push(x);
-                            // ..but right now, check if we get anywhere
+                            // ...but right now, check if we get anywhere
                             // with the next empty cell.
                             x = self.index_of_next_empty[x];
                         }
